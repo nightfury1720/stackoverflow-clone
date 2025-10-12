@@ -4,11 +4,13 @@ A full-stack application that replicates Stack Overflow's question-answer interf
 
 ## 🚀 Features
 
-- **Search & Display**: Search and display real Stack Overflow questions and answers
-- **AI-Powered Reranking**: LLM-based answer reranking for improved relevance and accuracy
-- **Smart Caching**: Stores the 5 most recent questions in PostgreSQL database
+- **Intelligent Search Results**: Search displays multiple relevant Stack Overflow questions with their best answers inline
+- **AI-Powered Reranking**: LLM automatically reranks both search results AND individual answers for improved relevance and accuracy
+- **Dual Sort Modes**: Toggle between "Relevance" (Stack Overflow's ranking) and "Accuracy" (AI-reranked) for search results
+- **Best Answer Display**: Each search result shows the accepted answer or highest-voted answer directly inline
+- **Smart Caching**: Stores the 5 most recent questions with answers in PostgreSQL database
+- **Recently Asked Questions Sidebar**: Quick access to cached questions - click to instantly display from cache
 - **Modern UI**: Stack Overflow-inspired UI built with React and Tailwind CSS
-- **Toggle Views**: Switch between original and AI-reranked answer orders
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 - **Fully Containerized**: Complete Docker Compose setup for easy deployment
 
@@ -100,9 +102,10 @@ This command will:
 ### 5. Try it out!
 
 1. Type a programming question in the search bar (e.g., "How to reverse a string in Python")
-2. View the question details and answers from Stack Overflow
-3. Toggle between "Original Order" and "AI Reranked" to see the difference
-4. Check the sidebar for your recent searches
+2. Browse search results showing multiple relevant questions with their best answers displayed inline
+3. Toggle between "Relevance" and "Accuracy (AI)" tabs to see AI-reranked results
+4. Click on any question title to view it on Stack Overflow
+5. Check the sidebar for recently asked questions - click any to instantly load from cache!
 
 ## 🛠️ Development Setup (Without Docker)
 
@@ -199,7 +202,7 @@ docker-compose up --build
 
 ## 📡 API Endpoints
 
-### Search Questions
+### Search Questions (Single Question with All Answers)
 ```http
 POST /api/questions/search
 Content-Type: application/json
@@ -228,9 +231,14 @@ Content-Type: application/json
 }
 ```
 
-### Get Recent Questions
+### Search Similar Questions (Multiple Questions with Best Answers)
 ```http
-GET /api/questions/recent
+POST /api/questions/search-similar
+Content-Type: application/json
+
+{
+  "question": "How to reverse a string in Python"
+}
 ```
 
 **Response:**
@@ -239,10 +247,58 @@ GET /api/questions/recent
   "questions": [
     {
       "id": 123456,
-      "title": "...",
-      "tags": [...],
+      "title": "How to reverse a string in Python?",
+      "body": "...",
+      "tags": ["python", "string"],
       "score": 150,
+      "view_count": 10000,
       "answer_count": 5,
+      "link": "https://stackoverflow.com/questions/...",
+      "owner": {...},
+      "answers": [
+        {
+          "answer_id": 123457,
+          "body": "...",
+          "score": 200,
+          "is_accepted": true,
+          "owner": {...}
+        }
+      ],
+      "is_answered": true,
+      "accepted_answer_id": 123457,
+      "creation_date": 1234567890
+    }
+  ],
+  "reranked_questions": [...]
+}
+```
+
+### Get Recent Questions
+```http
+GET /api/questions/recent
+```
+
+Returns the 5 most recently searched questions with full cached data including answers.
+
+**Response:**
+```json
+{
+  "questions": [
+    {
+      "id": 123456,
+      "title": "How to reverse a string in Python?",
+      "body": "...",
+      "tags": ["python", "string"],
+      "score": 150,
+      "view_count": 10000,
+      "answer_count": 5,
+      "link": "https://stackoverflow.com/questions/...",
+      "owner": {
+        "display_name": "John Doe",
+        "reputation": 5000
+      },
+      "answers": [...],
+      "reranked_answers": [...],
       "searched_at": "2024-10-11T10:30:00Z"
     }
   ]
@@ -284,9 +340,10 @@ stackoverflow-clone/
 │   │   ├── components/
 │   │   │   ├── Header.jsx
 │   │   │   ├── SearchBar.jsx
+│   │   │   ├── SearchResults.jsx         # NEW: Search results with inline answers
 │   │   │   ├── QuestionDisplay.jsx
 │   │   │   ├── AnswersList.jsx
-│   │   │   ├── RecentQuestions.jsx
+│   │   │   ├── RecentSearchTab.jsx
 │   │   │   └── LoadingSpinner.jsx
 │   │   ├── services/
 │   │   │   └── api.js
@@ -334,32 +391,45 @@ npm run dev
 
 ### 1. Stack Overflow Integration
 - Uses the official Stack Overflow API (v2.3)
-- Searches questions by title
+- Searches questions by title and content
 - Fetches complete question details with answers
+- Intelligently selects best answer (accepted or highest-voted) for each search result
 - Displays user reputation, votes, and accepted answers
 - Direct links to original Stack Overflow questions
 
-### 2. AI-Powered Answer Reranking
-The LLM reranking evaluates answers based on:
-- **Relevance**: How well the answer addresses the question
-- **Accuracy**: Correctness of the information provided
-- **Clarity**: How clear and well-explained the answer is
-- **Code Quality**: Quality of code examples (if present)
+### 2. Intelligent Search Results
+- **Inline Best Answers**: Each search result displays the question with its best answer shown directly
+- **Multiple Results**: View up to 10 relevant questions at once with their answers
+- **Dual Ranking System**: 
+  - **Relevance Tab**: Stack Overflow's default relevance ranking
+  - **Accuracy Tab**: AI-reranked results for improved quality
+- **Smart Answer Selection**: Automatically shows accepted answer if available, otherwise highest-voted answer
 
-### 3. Smart Caching System
-- Automatically caches the 5 most recent searches
-- Includes full question data and both answer orders
+### 3. AI-Powered Reranking (Automatic)
+The LLM automatically reranks both search results and individual answers based on:
+- **Relevance**: How well the content addresses the query/question
+- **Accuracy**: Correctness of the information provided
+- **Clarity**: How clear and well-explained the content is
+- **Code Quality**: Quality of code examples (if present)
+- **Answer Quality**: For search results, considers the quality of available answers
+
+### 4. Smart Caching System
+- Automatically caches the 5 most recently searched questions
+- Includes full question data, answers, and both answer orders (original and AI-reranked)
 - Updates search timestamp on repeated queries
-- Sidebar shows recent searches for quick access
+- Sidebar displays recently asked questions for quick access
+- Click any recent question to instantly load from cache (no API call required)
 - Old entries automatically removed when limit exceeded
 
-### 4. User Interface
+### 5. User Interface
 - Clean, modern design matching Stack Overflow aesthetics
 - Color scheme inspired by Stack Overflow's branding
 - Responsive layout for all screen sizes
-- Smooth toggle between original and AI-reranked views
-- Visual indicators for accepted answers
+- Smooth toggle between "Relevance" and "Accuracy (AI)" tabs for search results
+- Visual indicators for accepted answers (green checkmark)
+- Best answers highlighted with green border and background
 - Vote counts and user reputation display
+- Direct links to original Stack Overflow pages
 
 ## 🐛 Troubleshooting
 

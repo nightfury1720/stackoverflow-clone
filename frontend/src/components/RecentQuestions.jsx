@@ -15,12 +15,12 @@ function RecentQuestions({ questions, onQuestionClick }) {
     <div className="bg-white rounded-lg shadow-md p-4 sticky top-4">
       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
         <FaClock className="text-gray-600" />
-        Recent Searches
+        Recently Asked Questions
       </h3>
       
       {questions.length === 0 ? (
         <p className="text-sm text-gray-500">
-          No recent searches yet. Start by searching for a question!
+          No recently asked questions yet. Start by searching for a question!
         </p>
       ) : (
         <div className="space-y-3">

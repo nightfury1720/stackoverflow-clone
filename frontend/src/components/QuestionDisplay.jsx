@@ -1,7 +1,7 @@
-import { FaArrowUp, FaEye, FaCheckCircle, FaRobot } from 'react-icons/fa'
+import { FaArrowUp, FaEye, FaCheckCircle, FaRobot, FaArrowLeft } from 'react-icons/fa'
 import AnswersList from './AnswersList'
 
-function QuestionDisplay({ question, answers, showReranked, onToggleReranked, hasRerankedAnswers }) {
+function QuestionDisplay({ question, answers, showReranked, onToggleReranked, hasRerankedAnswers, onBackToSearch, showBackButton = false }) {
   const stripHtml = (html) => {
     const tmp = document.createElement('DIV')
     tmp.innerHTML = html
@@ -10,6 +10,19 @@ function QuestionDisplay({ question, answers, showReranked, onToggleReranked, ha
 
   return (
     <div className="mt-6 space-y-4">
+      {/* Back to Search Results Button */}
+      {showBackButton && onBackToSearch && (
+        <div className="mb-4">
+          <button
+            onClick={onBackToSearch}
+            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <FaArrowLeft />
+            Back to Search Results
+          </button>
+        </div>
+      )}
+
       {/* Question Card */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="p-6">

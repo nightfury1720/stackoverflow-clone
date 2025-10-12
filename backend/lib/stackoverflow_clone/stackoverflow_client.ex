@@ -123,4 +123,67 @@ defmodule StackoverflowClone.StackoverflowClient do
         error
     end
   end
+
+  @doc """
+  Gets the best answer for a question (accepted answer or highest voted).
+  """
+  def get_best_answer(question_id) do
+    params = %{
+      order: "desc",
+      sort: "votes",
+      site: "stackoverflow",
+      filter: "!-*jbN-o8P3E5",
+      pagesize: 3  # Get top 3 answers to find accepted or highest voted
+    }
+
+    url = "#{@base_url}/questions/#{question_id}/answers"
+
+    case HTTPoison.get(url, [], params: params) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        case Jason.decode(body) do
+          {:ok, %{"items" => items}} when length(items) > 0 ->
+            # Find accepted answer first, otherwise return highest voted
+            best_answer =
+              Enum.find(items, fn answer -> answer["is_accepted"] == true end) ||
+              List.first(items)
+            {:ok, [best_answer]}
+          {:ok, _} ->
+            {:ok, []}
+          {:error, _} = error ->
+            error
+        end
+
+      {:ok, %HTTPoison.Response{status_code: status_code}} ->
+        {:error, "API returned status #{status_code}"}
+
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Searches and gets multiple similar questions with their best answers.
+  """
+  def search_similar_questions(query, count \\ 5) do
+    case search_questions(query, page: 1, pagesize: count) do
+      {:ok, questions} ->
+        # Get best answer for each question
+        questions_with_answers =
+          Enum.map(questions, fn question ->
+            question_id = question["question_id"]
+            case get_best_answer(question_id) do
+              {:ok, answers} ->
+                Map.put(question, "answers", answers)
+              _error ->
+                # Return question even if we can't get answers
+                Map.put(question, "answers", [])
+            end
+          end)
+
+        {:ok, questions_with_answers}
+
+      {:error, _} = error ->
+        error
+    end
+  end
 end
