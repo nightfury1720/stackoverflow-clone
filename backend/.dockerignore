@@ -1,0 +1,10 @@
+_build/
+deps/
+.git
+.gitignore
+README.md
+.env
+*.log
+.elixir_ls/
+.vscode/
+
