@@ -32,9 +32,8 @@ defmodule StackoverflowCloneWeb.Endpoint do
   plug Plug.Session, @session_options
 
   plug CORSPlug,
-    origin: ["http://localhost:5173", "http://localhost:3000"],
+    origin: ["http://localhost:5173", "http://localhost:3000", "http://localhost:8000", "http://127.0.0.1:8000"],
     credentials: true
 
   plug StackoverflowCloneWeb.Router
 end
-

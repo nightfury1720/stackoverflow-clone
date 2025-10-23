@@ -1,7 +1,7 @@
 defmodule StackoverflowCloneWeb.QuestionController do
   use Phoenix.Controller
 
-  alias StackoverflowClone.Questions
+  alias StackoverflowClone.RecentSearches
   alias StackoverflowClone.StackoverflowClient
   alias StackoverflowClone.LLMClient
 
@@ -17,31 +17,17 @@ defmodule StackoverflowCloneWeb.QuestionController do
         # Rerank answers using LLM
         {:ok, reranked_answers} = LLMClient.rerank_answers(question_data, answers)
 
-        # Prepare data for caching
-        question_attrs = %{
-          question_id: question_data["question_id"],
-          title: question_data["title"],
-          body: question_data["body"],
-          tags: question_data["tags"] || [],
-          score: question_data["score"],
-          view_count: question_data["view_count"],
-          answer_count: question_data["answer_count"],
-          owner_name: get_in(question_data, ["owner", "display_name"]),
-          owner_reputation: get_in(question_data, ["owner", "reputation"]),
-          link: question_data["link"],
-          answers: %{"items" => answers},
-          reranked_answers: %{"items" => reranked_answers},
+        # Store the search query in recent searches
+        case RecentSearches.create_recent_search(%{
+          search_query: question_text,
           searched_at: DateTime.utc_now()
-        }
-
-        # Cache the question
-        case Questions.upsert_question(question_attrs) do
-          {:ok, _question} ->
-            Questions.cleanup_old_questions()
-            Logger.info("Question cached successfully")
+        }) do
+          {:ok, _search} ->
+            RecentSearches.cleanup_old_searches()
+            Logger.info("Search query stored successfully")
 
           {:error, changeset} ->
-            Logger.error("Failed to cache question: #{inspect(changeset)}")
+            Logger.error("Failed to store search query: #{inspect(changeset)}")
         end
 
         # Return response
@@ -114,6 +100,19 @@ defmodule StackoverflowCloneWeb.QuestionController do
         # Rerank using LLM for accuracy
         {:ok, reranked_questions} = LLMClient.rerank_search_results(question_text, formatted_questions)
 
+        # Store the search query in recent searches
+        case RecentSearches.create_recent_search(%{
+          search_query: question_text,
+          searched_at: DateTime.utc_now()
+        }) do
+          {:ok, _search} ->
+            RecentSearches.cleanup_old_searches()
+            Logger.info("Search query stored successfully from search_similar")
+
+          {:error, changeset} ->
+            Logger.error("Failed to store search query from search_similar: #{inspect(changeset)}")
+        end
+
         json(conn, %{
           questions: sorted_questions,
           reranked_questions: reranked_questions
@@ -140,29 +139,17 @@ defmodule StackoverflowCloneWeb.QuestionController do
   end
 
   def recent(conn, _params) do
-    questions = Questions.list_recent_questions()
+    searches = RecentSearches.list_recent_searches()
 
-    formatted_questions =
-      Enum.map(questions, fn q ->
+    formatted_searches =
+      Enum.map(searches, fn s ->
         %{
-          id: q.question_id,
-          title: q.title,
-          body: q.body,
-          tags: q.tags,
-          score: q.score,
-          answer_count: q.answer_count,
-          view_count: q.view_count,
-          link: q.link,
-          searched_at: q.searched_at,
-          owner: %{
-            display_name: q.owner_name,
-            reputation: q.owner_reputation
-          },
-          answers: get_in(q.answers, ["items"]) || [],
-          reranked_answers: get_in(q.reranked_answers, ["items"]) || []
+          id: s.id,
+          search_query: s.search_query,
+          searched_at: s.searched_at
         }
       end)
 
-    json(conn, %{questions: formatted_questions})
+    json(conn, %{questions: formatted_searches})
   end
 end

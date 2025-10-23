@@ -67,34 +67,6 @@ function App() {
     }
   }
 
-  const handleRecentQuestionClick = (recentQuestion) => {
-    // Display cached question data directly without re-searching
-    setLoading(true)
-    setError(null)
-    setShowReranked(false)
-    setSearchMode('detailed')
-    setSearchResults([])
-    setRerankedSearchResults([])
-    
-    // Small delay to show loading state for better UX
-    setTimeout(() => {
-      setQuestion({
-        id: recentQuestion.id,
-        title: recentQuestion.title,
-        body: recentQuestion.body,
-        tags: recentQuestion.tags,
-        score: recentQuestion.score,
-        view_count: recentQuestion.view_count,
-        answer_count: recentQuestion.answer_count,
-        link: recentQuestion.link,
-        owner: recentQuestion.owner
-      })
-      setAnswers(recentQuestion.answers || [])
-      setRerankedAnswers(recentQuestion.reranked_answers || [])
-      setLoading(false)
-      setLastSearchTime(Date.now())
-    }, 200)
-  }
 
   const handleBackToSearch = () => {
     setSearchMode('results')
@@ -114,8 +86,6 @@ function App() {
           <aside className="hidden lg:block w-64 flex-shrink-0">
             <RecentSearchTab 
               recentQuestions={recentQuestions}
-              onQuestionClick={handleRecentQuestionClick}
-              key={`recent-${recentQuestions.length}-${recentQuestions[0]?.id || 'empty'}`}
             />
           </aside>
 

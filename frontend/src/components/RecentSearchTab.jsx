@@ -1,7 +1,7 @@
 import { FaHistory, FaSearch } from 'react-icons/fa'
 import { formatDistanceToNow } from 'date-fns'
 
-function RecentSearchTab({ recentQuestions, onQuestionClick }) {
+function RecentSearchTab({ recentQuestions }) {
   const formatDate = (dateString) => {
     try {
       const date = new Date(dateString)
@@ -27,48 +27,32 @@ function RecentSearchTab({ recentQuestions, onQuestionClick }) {
         </div>
       ) : (
         <div className="space-y-3">
-          {recentQuestions.slice(0, 10).map((question, index) => (
-            <button
-              key={`${question.id}-${question.searched_at || index}`}
-              onClick={() => onQuestionClick(question)}
-              className="w-full text-left p-3 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors group"
+          {recentQuestions.slice(0, 10).map((search, index) => (
+            <div
+              key={`${search.id}-${search.searched_at || index}`}
+              className="border rounded-lg p-3 bg-gray-50"
             >
-              <h4 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600 mb-2">
-                {question.title}
-              </h4>
-              
-              {question.tags && question.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {question.tags.slice(0, 3).map((tag, tagIndex) => (
-                    <span
-                      key={tagIndex}
-                      className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                  {question.tags.length > 3 && (
-                    <span className="px-2 py-0.5 text-gray-500 text-xs">
-                      +{question.tags.length - 3}
-                    </span>
+              <div className="flex items-start gap-3">
+                {/* Search icon */}
+                <div className="flex-shrink-0 mt-1">
+                  <FaSearch className="text-gray-400 text-sm" />
+                </div>
+
+                {/* Search query content */}
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-medium text-gray-700 line-clamp-2 mb-2">
+                    {search.search_query}
+                  </h4>
+                  
+                  {/* Search timestamp */}
+                  {search.searched_at && (
+                    <div className="text-xs text-gray-500">
+                      {formatDate(search.searched_at)}
+                    </div>
                   )}
                 </div>
-              )}
-              
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <div className="flex items-center gap-2">
-                  <span>{question.score || 0} votes</span>
-                  <span>•</span>
-                  <span>{question.answer_count || 0} answers</span>
-                </div>
-                
-                {question.searched_at && (
-                  <span className="text-gray-400">
-                    {formatDate(question.searched_at)}
-                  </span>
-                )}
               </div>
-            </button>
+            </div>
           ))}
         </div>
       )}
@@ -77,3 +61,5 @@ function RecentSearchTab({ recentQuestions, onQuestionClick }) {
 }
 
 export default RecentSearchTab
+
+

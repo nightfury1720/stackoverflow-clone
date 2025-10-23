@@ -24,4 +24,3 @@ defmodule StackoverflowClone.Repo.Migrations.CreateQuestions do
     create index(:questions, [:searched_at])
   end
 end
-
